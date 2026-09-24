@@ -23,8 +23,6 @@ Deno.serve (async (req) => {
     }
 
     // Chỗ này bị lặp lại đúng lỗi mình note ở Lesson 5 lun anh: research_questions đang nằm lồng trong interviews, nhưng research question thực ra thuộc về research_plan (set 1 lần cho cả plan), không phải riêng cho từng interview. Research_questions với interviews nên đứng ngang hàng nhau nha anh, cả hai đều thuộc research_plan
-    //  [advanced comment] Với lại theo Part 3 thì research_questions nên có interview_questions nest thêm bên trong nữa (giống Example B đó anh), mà ở đây research_questions mới chỉ select `id, content` thôi, nếu chi tiết thì mình thêm 1 tầng nest nha anh.
-    // Một comment nhỏ thu: `.from('research-plan')` đang để dấu gạch ngang, Postgres không cho identifier có gạch ngang nếu không quote á anh, với lại theo naming convention (quy tắc đặt tên) snake_case mình hay dùng thì nên đổi thành `research_plan` cho khớp luôn.
     const { data, error} = await supabase
     .from('research-plan')
     .select(`
@@ -44,7 +42,7 @@ Deno.serve (async (req) => {
       return new Response (error.message, { status: 500,
         headers: corsHeaders })
     }
-    // Chỗ này query không có `.single()` nên `data` trả về sẽ là mảng, kể cả không match được row nào thì cũng ra `[]` (có giá trị là mảng rỗng) chứ không phải `null` đâu nha anh.  mà `![]` trong JS luôn là `false`. Nên `if (!data)` ở đây cũng là dead code (lúc nào cũng trả về false), y như bug `.single()` mình phân tích ở Example B, chỉ là ngược lại thôi (thiếu `.single()` thay vì có dư). Kết quả là gọi 1 id không tồn tại thì mình sẽ nhận 200 với mảng rỗng, chứ không phải 404 như yêu cầu.
+    // Query này không có `.single()` nên `data` luôn là mảng, kể cả không match row nào cũng ra `[]` chứ không phải `null` - mà `![]` trong JS là `false`, nên `if (!data)` dưới đây là dead code, y như bug `.single()` ở Example B, chỉ ngược chiều thôi.
     if (!data) {
       return new Response('Data not found', { status: 404, headers: corsHeaders })
     }

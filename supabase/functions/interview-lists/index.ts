@@ -26,8 +26,6 @@ Deno.serve (async (req) => {
     // Chỗ này có mấy vấn đề á anh:
     // 1. `.from('interview list')` tên bảng có khoảng trắng, nên query này sẽ fail ngay.
     // 2. `.select('id')` rồi mới `.update(...)` - thứ tự bị ngược, `.select()` trả về 1 builder khác không có `.update()`, nên dòng này rất dễ dính error trước khi chạy tới được `if (error)`. Muốn vừa update vừa lấy lại row thì phải là `.update({...}).eq(...).select()` - `.select()` đứng SAU `.update()` nha anh.
-    // 3. `status: 'completed'` đang hardcode cứng, tuy là vẫn hoàn thành ngon mà không được linh hoạt lắm ạ. Nếu làm thẳng cách này thì anh không cần dùng body lun
-    // 4. Thì một cách linh hoạt hơn xíu là nhận status nằm ở trong body nha anh, FE tụi nó thích set gì thì tụi nó set
     const body = await req.json()
     const { data, error} = await supabase
     .from('interview list')

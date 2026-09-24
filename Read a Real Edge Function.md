@@ -48,9 +48,8 @@ Deno.serve(async (req) => {           //request async
 4. What HTTP error would fire if a required input is missing?
    error message 400 - Missing id
 
-> Câu 4 này mới trả lời được nửa bài thôi á anh - "Missing id" đúng nhưng đó là cái bug lộ liễu, còn cái bug thật sự của Example A nằm ở chỗ khác: code không hề validate `body.status` trước khi update. Nếu client gửi lên body thiếu `status` (hoặc `body.status` là `undefined`), request vẫn đi tới `.update({ status: body.status })`, rồi Postgres/PostgREST reject cái update đó -> mình end up trả về lỗi 500 (generic error) thay vì 1 lỗi 400 sạch sẽ kiểu "Missing status". Đây là phần nâng cao hơn.
-
-> Thêm 1 điểm nữa: tên bài là `PATCH /interviews/:id` - tức id nằm trên path - nhưng code thật lại đọc `url.searchParams.get('id')`, nghĩa là id đang được kỳ vọng nằm ở query string (`?id=...`). Cái title với cách implement đang lệch nhau, em nghĩ đáng để note ra vì đây chính là kiểu lỗi mình sẽ tự lặp lại ở phần thiết kế của mình.
+> Phần lớn đúng rồi nha em, có 1 điểm nâng cao thêm cho tương lai.
+> Tên bài là `PATCH /interviews/:id` - tức id nằm trên path - nhưng code thật lại đọc `url.searchParams.get('id')`, nghĩa là id đang nằm ở query string (`?id=...`) chứ không phải path param thật. Title với cách implement đang lệch nhau á em.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -111,4 +110,5 @@ Deno.serve(async (req) => {
    error message 400 - Missing id
    error message 404 - Missing data
 
-> Chỗ 404 này chưa đúng á anh, nhánh `if (!data) return 404` thật ra là dead code, không bao giờ chạy tới được đâu. Vì code có gọi `.single()`, mà `.single()` sẽ throw/trả error ngay khi query không match row nào (0 rows), nên flow sẽ nhảy thẳng vào nhánh `if (error)` ở trên và trả về 500 trước, chứ không đi xuống được dòng check `!data`. Nên thực tế truyền 1 id không tồn tại, endpoint này trả về 500 chứ không phải 404 như mình đang ghi đâu anh. Đây là đúng cái bẫy bài muốn mình phát hiện.
+> Phần lớn đúng rồi nha em, có 1 điểm nâng cao thêm cho tương lai.
+> Case "id không tồn tại" thực ra sẽ trả về 500 chứ không phải 404 đâu - vì `.single()` throw error ngay khi không match row nào, nên code rơi vào nhánh `if (error)` trước, không bao giờ chạy tới `if (!data)` được.
