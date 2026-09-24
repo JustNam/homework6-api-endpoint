@@ -22,9 +22,9 @@ Deno.serve (async (req) => {
       return new Response ('Missing id', { status: 400, headers: corsHeaders})
     }
 
-    // [TBR] Anh ơi, đây lại đúng cái lỗi mình đã note ở Lesson 5 rồi nè: research_questions đang được nest bên trong interviews, nhưng theo đúng domain model thì research question thuộc về research_plan (đặt ra 1 lần cho cả plan), không phải riêng từng interview - y hệt feedback em từng ghi ở bài Database Design ("researchquestion đang reference interview, nhưng theo bài thì research question thuộc về research plan..."). Nên response đúng phải là research_questions nằm ngang hàng (sibling) với interviews, cả hai đều thuộc research_plan, chứ không lồng research_questions vào bên trong từng interview như vầy.
-    // [TBR] Với lại theo Part 3 spec thì research_questions cần có interview_questions nest bên trong nữa (giống pattern Example B), nhưng ở đây research_questions chỉ mới select `id, content` thôi, chưa có interview_questions - thiếu 1 tầng nest theo yêu cầu bài.
-    // [TBR] Nhỏ thôi: `.from('research-plan')` đang dùng dấu gạch ngang, Postgres identifier không cho phép gạch ngang nếu không quote - với lại theo naming convention (snake_case) mình từng nói ở Lesson 5 thì nên là `research_plan`/`research_plans` cho khớp.
+    // Chỗ này bị lặp lại đúng lỗi mình note ở Lesson 5 lun anh: research_questions đang nằm lồng trong interviews, nhưng research question thực ra thuộc về research_plan (set 1 lần cho cả plan), không phải riêng cho từng interview. Research_questions với interviews nên đứng ngang hàng nhau nha anh, cả hai đều thuộc research_plan
+    //  [advanced comment] Với lại theo Part 3 thì research_questions nên có interview_questions nest thêm bên trong nữa (giống Example B đó anh), mà ở đây research_questions mới chỉ select `id, content` thôi, nếu chi tiết thì mình thêm 1 tầng nest nha anh.
+    // Một comment nhỏ thu: `.from('research-plan')` đang để dấu gạch ngang, Postgres không cho identifier có gạch ngang nếu không quote á anh, với lại theo naming convention (quy tắc đặt tên) snake_case mình hay dùng thì nên đổi thành `research_plan` cho khớp luôn.
     const { data, error} = await supabase
     .from('research-plan')
     .select(`
@@ -44,7 +44,7 @@ Deno.serve (async (req) => {
       return new Response (error.message, { status: 500,
         headers: corsHeaders })
     }
-    // [TBR] Vì query này không có `.single()`, `data` trả về sẽ là 1 mảng (array), kể cả khi không match được row nào thì cũng là `[]` chứ không phải `null`/`undefined` - mà `![]` luôn là `false` trong JS. Nên `if (!data)` ở đây cũng là dead code, không bao giờ trigger được, y như cái bug `.single()` mình vừa phân tích ở Example B, chỉ là ngược lại thôi (thiếu `.single()` thay vì có). Kết quả là truyền 1 id không tồn tại thì mình sẽ nhận về 200 với mảng rỗng, chứ không phải 404 như đang note.
+    // Chỗ này query không có `.single()` nên `data` trả về sẽ là mảng, kể cả không match được row nào thì cũng ra `[]` (có giá trị là mảng rỗng) chứ không phải `null` đâu nha anh.  mà `![]` trong JS luôn là `false`. Nên `if (!data)` ở đây cũng là dead code (lúc nào cũng trả về false), y như bug `.single()` mình phân tích ở Example B, chỉ là ngược lại thôi (thiếu `.single()` thay vì có dư). Kết quả là gọi 1 id không tồn tại thì mình sẽ nhận 200 với mảng rỗng, chứ không phải 404 như yêu cầu.
     if (!data) {
       return new Response('Data not found', { status: 404, headers: corsHeaders })
     }

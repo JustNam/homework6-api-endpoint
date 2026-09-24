@@ -14,7 +14,8 @@ Deno.serve(async (req) => {           //request async
  
   const url = new URL(req.url)       // declare url value
   const id = url.searchParams.get('id') // get id from URL request
- 
+
+
   if (!id) {                        // if request unidentified id (input) -> return headers '400 Missing id'
     return new Response('Missing id', { status: 400, headers: corsHeaders })
   }
@@ -47,8 +48,9 @@ Deno.serve(async (req) => {           //request async
 4. What HTTP error would fire if a required input is missing?
    error message 400 - Missing id
 
-> [TBR] Câu 4 này mới trả lời được nửa bài thôi á anh - "Missing id" đúng nhưng đó là cái bug lộ liễu, còn cái bug thật sự của Example A nằm ở chỗ khác: code không hề validate `body.status` trước khi update. Nếu client gửi lên body thiếu `status` (hoặc `body.status` là `undefined`), request vẫn đi tới `.update({ status: body.status })`, rồi Postgres/PostgREST reject cái update đó -> mình end up trả về lỗi 500 (generic error) thay vì 1 lỗi 400 sạch sẽ kiểu "Missing status". Đây mới là insight chính bài này muốn mình catch được đó anh.
-> [TBR] Thêm 1 điểm nữa: tên bài là `PATCH /interviews/:id` - tức id nằm trên path - nhưng code thật lại đọc `url.searchParams.get('id')`, nghĩa là id đang được kỳ vọng nằm ở query string (`?id=...`). Cái title với cách implement đang lệch nhau, em nghĩ đáng để note ra vì đây chính là kiểu lỗi mình sẽ tự lặp lại ở phần thiết kế của mình (anh sẽ thấy ở dưới nha).
+> Câu 4 này mới trả lời được nửa bài thôi á anh - "Missing id" đúng nhưng đó là cái bug lộ liễu, còn cái bug thật sự của Example A nằm ở chỗ khác: code không hề validate `body.status` trước khi update. Nếu client gửi lên body thiếu `status` (hoặc `body.status` là `undefined`), request vẫn đi tới `.update({ status: body.status })`, rồi Postgres/PostgREST reject cái update đó -> mình end up trả về lỗi 500 (generic error) thay vì 1 lỗi 400 sạch sẽ kiểu "Missing status". Đây là phần nâng cao hơn.
+
+> Thêm 1 điểm nữa: tên bài là `PATCH /interviews/:id` - tức id nằm trên path - nhưng code thật lại đọc `url.searchParams.get('id')`, nghĩa là id đang được kỳ vọng nằm ở query string (`?id=...`). Cái title với cách implement đang lệch nhau, em nghĩ đáng để note ra vì đây chính là kiểu lỗi mình sẽ tự lặp lại ở phần thiết kế của mình.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -109,4 +111,4 @@ Deno.serve(async (req) => {
    error message 400 - Missing id
    error message 404 - Missing data
 
-> [TBR] Chỗ 404 này chưa đúng á anh - nhánh `if (!data) return 404` thật ra là dead code, không bao giờ chạy tới được đâu. Vì code có gọi `.single()`, mà `.single()` sẽ throw/trả error ngay khi query không match row nào (0 rows), nên flow sẽ nhảy thẳng vào nhánh `if (error)` ở trên và trả về 500 trước, chứ không đi xuống được dòng check `!data`. Nên thực tế truyền 1 id không tồn tại, endpoint này trả về 500 chứ không phải 404 như mình đang ghi đâu anh. Đây là đúng cái bẫy bài muốn mình phát hiện.
+> Chỗ 404 này chưa đúng á anh, nhánh `if (!data) return 404` thật ra là dead code, không bao giờ chạy tới được đâu. Vì code có gọi `.single()`, mà `.single()` sẽ throw/trả error ngay khi query không match row nào (0 rows), nên flow sẽ nhảy thẳng vào nhánh `if (error)` ở trên và trả về 500 trước, chứ không đi xuống được dòng check `!data`. Nên thực tế truyền 1 id không tồn tại, endpoint này trả về 500 chứ không phải 404 như mình đang ghi đâu anh. Đây là đúng cái bẫy bài muốn mình phát hiện.

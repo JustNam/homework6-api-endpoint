@@ -15,7 +15,7 @@ Deno.serve (async (req) => {
       return new Response ('Method not allowed', {status: 405, headers: corsHeaders })  
     }
 
-    // [TBR] Đây chính là bug em note ở Example A đó anh: id nên nằm trên path (VD /interview-lists/:id) vì assignment yêu cầu "correct id-in-path usage (not query param)", nhưng mình lại lấy id qua searchParams (query param) giống y hệt Example A - đúng bug mà bài kêu mình tránh.
+    // Đây là bug em note ở Example A luôn đó anh: id nên nằm trên path (VD /interview-lists/:id) vì assignment yêu cầu "correct id-in-path usage (not query param)", nhưng ở đây lại lấy id qua searchParams (query param), thường chỉ những thông tin lọc như là thứ tự sắp xếp, range giá... thì mới hay để vào searchParams thui nha anh
     const url = new URL(req.url)
     const id = url.searchParams.get('id')
 
@@ -23,10 +23,11 @@ Deno.serve (async (req) => {
       return new Response ('Missing id', { status: 400, headers: corsHeaders})
     }
 
-    // [TBR] Chỗ này có mấy vấn đề á anh:
-    // 1. `.from('interview list')` - tên bảng có khoảng trắng, Postgres không có bảng nào tên vậy đâu (chắc anh gõ nhầm, ý là `interviews`) nên query này sẽ fail ngay.
-    // 2. `.select('id')` rồi mới `.update(...)` - thứ tự bị ngược, `.select()` trả về 1 builder khác không có `.update()`, nên dòng này rất dễ throw runtime error trước khi chạy tới được `if (error)`. Muốn vừa update vừa lấy lại row thì phải là `.update({...}).eq(...).select()` - `.select()` đứng SAU `.update()` nha anh.
-    // 3. `status: 'completed'` đang hardcode cứng, còn `body` ở trên parse xong mà không dùng tới - nên chỗ "status validation" mà bài yêu cầu (Part 2) chưa thực sự được làm, vì mình đâu có check `body.status` gì đâu.
+    // Chỗ này có mấy vấn đề á anh:
+    // 1. `.from('interview list')` tên bảng có khoảng trắng, nên query này sẽ fail ngay.
+    // 2. `.select('id')` rồi mới `.update(...)` - thứ tự bị ngược, `.select()` trả về 1 builder khác không có `.update()`, nên dòng này rất dễ dính error trước khi chạy tới được `if (error)`. Muốn vừa update vừa lấy lại row thì phải là `.update({...}).eq(...).select()` - `.select()` đứng SAU `.update()` nha anh.
+    // 3. `status: 'completed'` đang hardcode cứng, tuy là vẫn hoàn thành ngon mà không được linh hoạt lắm ạ. Nếu làm thẳng cách này thì anh không cần dùng body lun
+    // 4. Thì một cách linh hoạt hơn xíu là nhận status nằm ở trong body nha anh, FE tụi nó thích set gì thì tụi nó set
     const body = await req.json()
     const { data, error} = await supabase
     .from('interview list')
@@ -38,7 +39,8 @@ Deno.serve (async (req) => {
       return new Response (error.message, { status: 500,
         headers: corsHeaders })
     }
-    // [TBR] Với cách viết ở trên (không có `.select()` sau `.update()`), Postgrest mặc định trả `data: null` bất kể update có match được row hay không - nên `if (!data)` này sẽ luôn đúng, tức là mỗi lần update thành công vẫn bị trả về 404 "Data not found". Giống hệt kiểu bug dead-code mình vừa phân tích ở Example B á anh, chỉ khác nguyên nhân thôi.
+    // Cái dụ này (không có `.select()` sau `.update()`) Postgrest sẽ trả `data: null` bất kể update có match được row hay không nha anh, nên `if (!data)` này sẽ luôn đúng, tức là mỗi lần update thành công vẫn bị trả về 404.
+
     if (!data) {
       return new Response('Data not found', { status: 404, headers: corsHeaders })
     }
@@ -62,7 +64,7 @@ Deno.serve (async (req) => {
 /*
 1. The endpoint path and method
 	1. Path: http://127.0.0.1:54321/functions/v1/interview-lists?=1
-	// [TBR] Path này đang là query param (với lại `?=1` còn thiếu tên key, phải là `?id=1` mới đúng cú pháp query string). Theo assignment thì id phải nằm trên path, VD `/interview-lists/:id`, để match với route Part 2 yêu cầu.
+	// [Nam] Path này đang là query param (với lại `?=1` còn thiếu tên key, phải là `?id=1` mới đúng cú pháp query string). Theo assignment thì id phải nằm trên path, VD `/interview-lists/:id`, để match với route Part 2 yêu cầu.
 	2. Method: PATCH
 2. What the request body or URL params contain
 	1. id của interview trong interview list
